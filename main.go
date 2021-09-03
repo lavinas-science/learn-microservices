@@ -34,14 +34,18 @@ func main_old() {
 }
 
 func main() {
+
+	// Starting log
 	l := log.New(os.Stdout, "product-api-", log.LstdFlags)
-	hh := handlers.NewHello(l)
-	gh := handlers.NewGoodbye(l)
 
+	// Handling - injecting log
 	sm := http.NewServeMux()
-	sm.Handle("/", hh)
-	sm.Handle("/bye", gh)
-
+	// sm.Handle("/", handlers.NewHello(l))
+	// sm.Handle("/bye", handlers.NewGoodbye(l))
+	sm.Handle("/", handlers.NewProducts(l))
+	
+	
+	// Run the server in a go routine with parameters
 	s := &http.Server{
 		Addr:         ":9090",
 		Handler:      sm,
@@ -56,16 +60,13 @@ func main() {
 		}
 	}()
 
+	// Finishing Gracefully
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
-
-	sig := <- sigChan
+	sig := <-sigChan
 	l.Println("Received terminate, graceful shutdown", sig)
-	
-	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
-
+	tc, cc := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cc()
 	s.Shutdown(tc)
-
-
 }
