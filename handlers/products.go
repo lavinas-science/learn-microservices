@@ -37,15 +37,13 @@ func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
-
+	p.l.Println("Handle PUT Product")
 	// Getting var id
 	vars := mux.Vars(r)
 	id, _ := strconv.Atoi(vars["id"])
 	// Checking product on db and updating
-	p.l.Println("Handle PUT Product")
 	prod := r.Context().Value(KeyProduct{}).(*data.Product)
-	p.l.Printf("Prod: %#v", prod)
-
+	// Update
 	err := data.UpdateProduct(id, prod)
 	if err == data.ErrProductNotFound {
 		http.Error(rw, "Product not found", http.StatusNotFound)
@@ -61,17 +59,14 @@ func (p *Products) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
 type KeyProduct struct{}
 
 func (p Products) MiddlewareProductValidation(next http.Handler) http.Handler {
-
+	// return handle funcrtion
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		prod := &data.Product{}
-
 		err := prod.FromJSON(r.Body)
-
 		if err != nil {
 			http.Error(rw, "Unable to unmarchal json", http.StatusBadRequest)
 			return
 		}
-
 		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
 		req := r.WithContext(ctx)
 
