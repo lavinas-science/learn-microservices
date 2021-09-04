@@ -2,8 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
@@ -13,38 +12,28 @@ import (
 	"github.com/lavinas-science/learn-microservices/handlers"
 )
 
-func main_old() {
-	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		log.Println("Hello World")
-		d, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			// rw.WriteHeader(http.StatusBadRequest)
-			// rw.Write([]byte("Opsss"))
-			http.Error(rw, "Ops", http.StatusBadRequest)
-			return
-		}
-		fmt.Fprintf(rw, "Hello %s\n", d)
-	})
-
-	http.HandleFunc("/goodbye", func(http.ResponseWriter, *http.Request) {
-		log.Println("Goodbye World")
-	})
-
-	http.ListenAndServe(":9090", nil)
-}
-
 func main() {
 
-	// Starting log
+	// create log
 	l := log.New(os.Stdout, "product-api-", log.LstdFlags)
 
-	// Handling - injecting log
-	sm := http.NewServeMux()
-	// sm.Handle("/", handlers.NewHello(l))
-	// sm.Handle("/bye", handlers.NewGoodbye(l))
-	sm.Handle("/", handlers.NewProducts(l))
-	
-	
+	// create handlers
+	ph := handlers.NewProducts(l)
+
+	//create a new serve mux and register the handle
+	sm := mux.NewRouter()
+
+	getR := sm.Methods(http.MethodGet).Subrouter()
+	getR.HandleFunc("/", ph.GetProducts)
+
+	postR := sm.Methods(http.MethodPost).Subrouter()
+	postR.HandleFunc("/", ph.AddProduct)
+	postR.Use(ph.MiddlewareProductValidation)
+
+	putR := sm.Methods(http.MethodPut).Subrouter()
+	putR.HandleFunc("/{id:[0-9]+}", ph.UpdateProduct)
+	putR.Use(ph.MiddlewareProductValidation)
+
 	// Run the server in a go routine with parameters
 	s := &http.Server{
 		Addr:         ":9090",
@@ -69,4 +58,5 @@ func main() {
 	tc, cc := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cc()
 	s.Shutdown(tc)
+
 }

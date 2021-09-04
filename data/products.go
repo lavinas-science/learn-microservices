@@ -2,9 +2,9 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
-	"fmt"
 )
 
 // Product defines the structure for an API product
@@ -28,8 +28,7 @@ func GetProducts() Products {
 func AddProduct(p *Product) {
 	p.ID = getNextID()
 	productList = append(productList, p)
-} 
-
+}
 
 func UpdateProduct(id int, p *Product) error {
 	_, pos, err := findProduct(id)
@@ -41,11 +40,10 @@ func UpdateProduct(id int, p *Product) error {
 	return nil
 }
 
-
 var ErrProductNotFound = fmt.Errorf("Product not found")
 
-func findProduct (id int) (*Product, int, error) {
-	for i, p := range(productList) {
+func findProduct(id int) (*Product, int, error) {
+	for i, p := range productList {
 		if p.ID == id {
 			return p, i, nil
 		}
@@ -54,7 +52,7 @@ func findProduct (id int) (*Product, int, error) {
 }
 
 func getNextID() int {
-	lp := productList[len(productList) - 1]
+	lp := productList[len(productList)-1]
 	return lp.ID + 1
 }
 
